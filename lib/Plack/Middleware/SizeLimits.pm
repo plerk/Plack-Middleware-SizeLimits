@@ -37,21 +37,19 @@ sub call
 {
   my($self, $env) = @_;
   
-
   my $res = $self->app->($env);
 
-  return $res unless $env->{'psgix.harakiri'};
-
-  my $s = Linux::Smaps->new($$)->all;
-  #warn "max  = $max_process_size";
-  #warn "size = ", $s->size;
-  if($s->size > $max_process_size)
+  if($env->{'psgix.harakiri'})
   {
-    $env->{'psgix.harakiri.commit'} = 1;
-    warn "PID $$ exceeded max memory (size: @{[ $s->size ]})";
+    my $s = Linux::Smaps->new($$)->all;
+    if($s->size > $max_process_size)
+    {
+      $env->{'psgix.harakiri.commit'} = 1;
+      warn "PID $$ exceeded max memory (size: @{[ $s->size ]})";
+    }
   }
 
-  return $res;
+  $res;
 }
 
 1;
